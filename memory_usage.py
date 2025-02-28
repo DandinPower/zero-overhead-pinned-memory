@@ -1,12 +1,7 @@
 import torch
-import psutil
-import os
-import gc
-import multiprocessing
 
 # Import both our allocation functions
-from zero_overhead_pinned_memory.experiments import get_torch_overhead, get_memalign_overhead, get_cuda_overhead
-
+from zero_overhead_pinned_memory.experiments import get_torch_overhead, get_posix_memalign_overhead, get_cuda_host_alloc_overhead, get_zeros_cuda_host_alloc_overhead
 
 if __name__ == "__main__":
     # Define two test cases: one with a power-of-2 size and one with a non power-of-2 size.
@@ -19,8 +14,9 @@ if __name__ == "__main__":
     # Here, we compare PyTorch's built-in pinned memory against our own method.
     methods = {
         "pytorch(baseline)": get_torch_overhead,
-        "our method (memalign_pin_memory)": get_memalign_overhead,
-        "our method (cuda_pin_memory)": get_cuda_overhead,
+        "to_posix_memalign_pinned": get_posix_memalign_overhead,
+        "to_cuda_host_alloc_pinned": get_cuda_host_alloc_overhead,
+        "zeros_cuda_host_alloc_pinned": get_zeros_cuda_host_alloc_overhead
     }
     
     # Run tests for each case and method.

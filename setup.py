@@ -3,7 +3,7 @@ from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 
 setup(
     name="zero_overhead_pinned_memory",
-    version="0.1.0",
+    version="0.0.0",
     author="Your Name",
     description="Zero Overhead Pinned Memory extension for PyTorch",
     packages=find_packages(where="src"),

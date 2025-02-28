@@ -4,7 +4,7 @@ import os
 import gc
 import multiprocessing
 
-from zero_overhead_pinned_memory import memalign_pin_memory, cuda_pin_memory
+from zero_overhead_pinned_memory import to_posix_memalign_pinned, to_cuda_host_alloc_pinned, zeros_cuda_host_alloc_pinned
 
 def get_memory_usage():
     """Returns the current (RSS) and virtual memory usage in bytes."""
@@ -56,36 +56,35 @@ def get_overhead(tensor_size, dtype, pinned_alloc_func):
 
 # --- Allocation functions for pinned memory ---
 
-def torch_pinned_alloc(tensor_size, dtype):
+def torch_pinned_func(tensor_size, dtype):
     """
     Allocates pinned memory using PyTorch's built-in support.
     """
     return torch.zeros(tensor_size, device='cpu', dtype=dtype, pin_memory=True)
 
-def memalign_pinned_alloc(tensor_size, dtype):
+def to_posix_memalign_pinned_func(tensor_size, dtype):
     """
-    Allocates pinned memory using the memalign_pin_memory function.
-    
-    Internally, we first create a CPU tensor with pin_memory=False and then
-    pass it to memalign_pin_memory.
+    Allocates pinned memory using the to_posix_memalign_pinned function.
     """
     unpinned_tensor = torch.zeros(tensor_size, device='cpu', dtype=dtype, pin_memory=False)
-    return memalign_pin_memory(unpinned_tensor)
+    return to_posix_memalign_pinned(unpinned_tensor)
 
-# Optionally, if you want to test your cuda_pin_memory function,
-# you can add a similar wrapper:
-def cuda_pinned_alloc(tensor_size, dtype):
+def to_cuda_host_alloc_pinned_func(tensor_size, dtype):
     """
-    Allocates pinned memory using the cuda_pin_memory function.
-    
-    Internally, we first create a CPU tensor with pin_memory=False and then
-    pass it to cuda_pin_memory.
+    Allocates pinned memory using the to_cuda_host_alloc_pinned function.
     """
     unpinned_tensor = torch.zeros(tensor_size, device='cpu', dtype=dtype, pin_memory=False)
-    return cuda_pin_memory(unpinned_tensor)
+    return to_cuda_host_alloc_pinned(unpinned_tensor)
+
+def zeros_cuda_host_alloc_pinned_func(tensor_size, dtype):
+    """
+    Allocates zero-initialized pinned memory using zeros_cuda_host_alloc_pinned.
+    """
+    return zeros_cuda_host_alloc_pinned((tensor_size,), dtype)
 
 from functools import partial
 
-get_torch_overhead = partial(get_overhead, pinned_alloc_func=torch_pinned_alloc)
-get_memalign_overhead = partial(get_overhead, pinned_alloc_func=memalign_pinned_alloc)
-get_cuda_overhead = partial(get_overhead, pinned_alloc_func=cuda_pinned_alloc)
+get_torch_overhead = partial(get_overhead, pinned_alloc_func=torch_pinned_func)
+get_posix_memalign_overhead = partial(get_overhead, pinned_alloc_func=to_posix_memalign_pinned_func)
+get_cuda_host_alloc_overhead = partial(get_overhead, pinned_alloc_func=to_cuda_host_alloc_pinned_func)
+get_zeros_cuda_host_alloc_overhead = partial(get_overhead, pinned_alloc_func=zeros_cuda_host_alloc_pinned_func)

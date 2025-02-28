@@ -1,7 +1,7 @@
 import time
 import torch
 
-from zero_overhead_pinned_memory import memalign_pin_memory, cuda_pin_memory
+from zero_overhead_pinned_memory import to_posix_memalign_pinned, to_cuda_host_alloc_pinned, zeros_cuda_host_alloc_pinned
 
 # --- Allocation Approaches ---
 
@@ -16,9 +16,9 @@ def approach1(tensor_size, dtype):
 def approach2(tensor_size, dtype):
     """
     Approach 2:
-    Create a CPU tensor without pinned memory and then pin it manually using memalign_pin_memory.
+    Create a CPU tensor without pinned memory and then pin it manually using to_posix_memalign_pinned.
     """
-    tensor = memalign_pin_memory(
+    tensor = to_posix_memalign_pinned(
         torch.zeros(tensor_size, device='cpu', dtype=dtype, pin_memory=False)
     )
     return tensor
@@ -26,11 +26,19 @@ def approach2(tensor_size, dtype):
 def approach3(tensor_size, dtype):
     """
     Approach 3:
-    Create a CPU tensor without pinned memory and then pin it manually using cuda_pin_memory.
+    Create a CPU tensor without pinned memory and then pin it manually using to_cuda_host_alloc_pinned.
     """
-    tensor = cuda_pin_memory(
+    tensor = to_cuda_host_alloc_pinned(
         torch.zeros(tensor_size, device='cpu', dtype=dtype, pin_memory=False)
     )
+    return tensor
+
+def approach4(tensor_size, dtype):
+    """
+    Approach 4:
+    Create a CPU pinned tensor using zeros_cuda_host_alloc_pinned.
+    """
+    tensor = zeros_cuda_host_alloc_pinned(tensor_size, dtype)
     return tensor
 
 # --- Benchmark Helpers ---
@@ -97,7 +105,7 @@ if __name__ == '__main__':
     # Define tensor parameters.
     tensor_size = (1024, 1024, 1024)  # Adjust this as needed.
     dtype = torch.float32
-
+    
     if not torch.cuda.is_available():
         print("CUDA is not available. Exiting.")
         exit(0)
@@ -106,13 +114,14 @@ if __name__ == '__main__':
 
     # Dictionary mapping method names to allocation functions.
     methods = {
-        "Approach 1 (pytorch pinned, baseline)": approach1,
-        "Approach 2 (memalign_pin_memory)": approach2,
-        "Approach 3 (cuda_pin_memory)": approach3,
+        "pytorch(baseline)": approach1,
+        "to_posix_memalign_pinned": approach2,
+        "to_cuda_host_alloc_pinned": approach3,
+        "zeros_cuda_host_alloc_pinned": approach4
     }
 
     # Set the baseline method as Approach 1.
-    baseline_name = "Approach 1 (pytorch pinned, baseline)"
+    baseline_name = "pytorch(baseline)"
     baseline_method = methods[baseline_name]
 
     # --- Benchmark: CPU Creation and Pinning ---
