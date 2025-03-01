@@ -42,9 +42,6 @@ This repository provides three alternative methods to avoid this overhead:
 4. **Correctness Tests**  
    Tests ensure proper allocation, registration, and deallocation of pinned memory, maintaining data integrity during GPU transfers.
 
-5. **DeepSpeed Patch**  
-   Optionally patch DeepSpeed to use `to_posix_memalign_pinned` for its pinned memory allocations.
-
 ## Installation
 
 1. **Prerequisites:**  
@@ -126,15 +123,6 @@ Compares:
 
 Outputs average allocation times (CPU creation + pinning) and GPU transfer times.
 
-### 4. DeepSpeed Patch
-
-Patch DeepSpeed to use `to_posix_memalign_pinned`:
-```python
-from zero_overhead_pinned_memory import patch_deepspeed_zero_overhead_pinned_memory
-
-patch_deepspeed_zero_overhead_pinned_memory()
-```
-Replaces `deepspeed.accelerator.cuda_accelerator.CUDA_Accelerator.pin_memory` with the zero-overhead method.
 
 ## Reference
 
